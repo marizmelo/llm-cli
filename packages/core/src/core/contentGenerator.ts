@@ -47,6 +47,9 @@ export enum AuthType {
   USE_GEMINI = 'gemini-api-key',
   USE_VERTEX_AI = 'vertex-ai',
   CLOUD_SHELL = 'cloud-shell',
+  USE_OPENAI = 'openai-api-key',
+  USE_ANTHROPIC = 'anthropic-api-key',
+  USE_OLLAMA = 'ollama-local',
 }
 
 export type ContentGeneratorConfig = {
@@ -55,6 +58,8 @@ export type ContentGeneratorConfig = {
   vertexai?: boolean;
   authType?: AuthType;
   proxy?: string;
+  provider?: string;
+  providerConfig?: Record<string, any>;
 };
 
 export function createContentGeneratorConfig(

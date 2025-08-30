@@ -80,6 +80,18 @@ export function AuthDialog({
       value: AuthType.USE_GEMINI,
     },
     { label: 'Vertex AI', value: AuthType.USE_VERTEX_AI },
+    {
+      label: 'Use OpenAI API Key',
+      value: AuthType.USE_OPENAI,
+    },
+    {
+      label: 'Use Anthropic API Key',
+      value: AuthType.USE_ANTHROPIC,
+    },
+    {
+      label: 'Use Ollama (Local Models)',
+      value: AuthType.USE_OLLAMA,
+    },
   ];
 
   const initialAuthIndex = items.findIndex((item) => {

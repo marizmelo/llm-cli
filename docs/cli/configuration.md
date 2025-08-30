@@ -404,8 +404,41 @@ The CLI automatically loads environment variables from an `.env` file. The loadi
   - Example: `export OTLP_GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_ID"`.
 - **`GOOGLE_CLOUD_LOCATION`**:
   - Your Google Cloud Project Location (e.g., us-central1).
-  - Required for using Vertex AI in non express mode.
-  - Example: `export GOOGLE_CLOUD_LOCATION="YOUR_PROJECT_LOCATION"`.
+  - Required for using Code Assist or Vertex AI.
+  - Example: `export GOOGLE_CLOUD_LOCATION="us-central1"`.
+
+### OpenAI
+- **`OPENAI_API_KEY`**:
+  - Your OpenAI API key.
+  - Required for using OpenAI models.
+  - Example: `export OPENAI_API_KEY="sk-..."`.
+- **`OPENAI_BASE_URL`**:
+  - Custom base URL for OpenAI API (optional).
+  - Useful for self-hosted instances or proxies.
+  - Example: `export OPENAI_BASE_URL="https://api.openai.com/v1"`.
+- **`OPENAI_MODEL`**:
+  - Default OpenAI model to use.
+  - Example: `export OPENAI_MODEL="gpt-4"`.
+
+### Anthropic
+- **`ANTHROPIC_API_KEY`**:
+  - Your Anthropic API key.
+  - Required for using Claude models.
+  - Example: `export ANTHROPIC_API_KEY="sk-ant-..."`.
+- **`ANTHROPIC_BASE_URL`**:
+  - Custom base URL for Anthropic API (optional).
+  - Example: `export ANTHROPIC_BASE_URL="https://api.anthropic.com"`.
+- **`ANTHROPIC_MODEL`**:
+  - Default Anthropic model to use.
+  - Example: `export ANTHROPIC_MODEL="claude-3-opus-20240229"`.
+
+### Ollama (Local Models)
+- **`OLLAMA_BASE_URL`**:
+  - Ollama server URL (optional, defaults to http://localhost:11434).
+  - Example: `export OLLAMA_BASE_URL="http://localhost:11434"`.
+- **`OLLAMA_MODEL`**:
+  - Default Ollama model to use.
+  - Example: `export OLLAMA_MODEL="llama2"`.
 - **`GEMINI_SANDBOX`**:
   - Alternative to the `sandbox` setting in `settings.json`.
   - Accepts `true`, `false`, `docker`, `podman`, or a custom command string.
