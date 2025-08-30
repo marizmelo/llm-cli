@@ -192,6 +192,15 @@ export const SETTINGS_SCHEMA = {
         description: 'Hide the application banner',
         showInDialog: true,
       },
+      customAsciiArt: {
+        type: 'string',
+        label: 'Custom ASCII Art',
+        category: 'UI',
+        requiresRestart: false,
+        default: undefined as string | undefined,
+        description: 'Custom ASCII art to display instead of the default logo. Leave empty to use the default.',
+        showInDialog: true,
+      },
       hideFooter: {
         type: 'boolean',
         label: 'Hide Footer',

@@ -1003,7 +1003,7 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
             <Box flexDirection="column" key="header">
               {!(
                 settings.merged.ui?.hideBanner || config.getScreenReader()
-              ) && <Header version={version} nightly={nightly} />}
+              ) && <Header version={version} nightly={nightly} customAsciiArt={settings.merged.ui?.customAsciiArt} />}
               {!(settings.merged.ui?.hideTips || config.getScreenReader()) && (
                 <Tips config={config} />
               )}

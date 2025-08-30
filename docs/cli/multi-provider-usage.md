@@ -47,6 +47,8 @@ You can also configure providers through the settings:
 
 ## Authentication
 
+For detailed authentication setup instructions, see the [Authentication documentation](./authentication.md).
+
 When you start the CLI, you'll be prompted to choose your authentication method:
 
 1. **Login with Google** - For Google services

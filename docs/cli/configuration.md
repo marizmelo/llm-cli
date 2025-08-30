@@ -98,6 +98,10 @@ Settings are organized into categories. All settings should be placed within the
   - **Description:** Hide the application banner.
   - **Default:** `false`
 
+- **`ui.customAsciiArt`** (string):
+  - **Description:** Custom ASCII art to display instead of the default LLM-CLI logo. Leave empty to use the default.
+  - **Default:** `undefined`
+
 - **`ui.hideFooter`** (boolean):
   - **Description:** Hide the footer from the UI.
   - **Default:** `false`

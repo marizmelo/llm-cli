@@ -1,8 +1,6 @@
 # Authentication Setup
 
-The Gemini CLI supports multiple AI providers. On initial startup you'll need to configure **one** of the following authentication methods:
-
-## Google AI Services
+The Gemini CLI requires you to authenticate with Google's AI services. On initial startup you'll need to configure **one** of the following authentication methods:
 
 1.  **Login with Google (Gemini Code Assist):**
     - Use this option to log in with your Google account.
@@ -117,65 +115,6 @@ The Gemini CLI supports multiple AI providers. On initial startup you'll need to
 
           :warning: Be advised that when you export your API key inside your shell configuration file, any other process executed from the shell can read it.
 
-## Third-Party AI Providers
-
-5.  **OpenAI:**
-    - Obtain your API key from OpenAI Platform: [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-    - Set the `OPENAI_API_KEY` environment variable. In the following methods, replace `YOUR_OPENAI_API_KEY` with the API key you obtained from OpenAI Platform:
-      - You can temporarily set the environment variable in your current shell session using the following command:
-        ```bash
-        export OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
-        ```
-      - For repeated use, you can add the environment variable to your [.env file](#persisting-environment-variables-with-env-files) or your shell's configuration file (like `~/.bashrc`, `~/.zshrc`, or `~/.profile`). For example, the following command adds the environment variable to a `~/.bashrc` file:
-        ```bash
-        echo 'export OPENAI_API_KEY="YOUR_OPENAI_API_KEY"' >> ~/.bashrc
-        source ~/.bashrc
-        ```
-        :warning: Be advised that when you export your API key inside your shell configuration file, any other process executed from the shell can read it.
-      - **Optional Configuration:**
-        - Set `OPENAI_MODEL` to specify the model to use (default: `gpt-4`)
-        - Set `OPENAI_BASE_URL` to use a custom API endpoint (default: `https://api.openai.com/v1`)
-
-6.  **Anthropic:**
-    - Obtain your API key from Anthropic Console: [https://console.anthropic.com/](https://console.anthropic.com/)
-    - Set the `ANTHROPIC_API_KEY` environment variable. In the following methods, replace `YOUR_ANTHROPIC_API_KEY` with the API key you obtained from Anthropic Console:
-      - You can temporarily set the environment variable in your current shell session using the following command:
-        ```bash
-        export ANTHROPIC_API_KEY="YOUR_ANTHROPIC_API_KEY"
-        ```
-      - For repeated use, you can add the environment variable to your [.env file](#persisting-environment-variables-with-env-files) or your shell's configuration file (like `~/.bashrc`, `~/.zshrc`, or `~/.profile`). For example, the following command adds the environment variable to a `~/.bashrc` file:
-        ```bash
-        echo 'export ANTHROPIC_API_KEY="YOUR_ANTHROPIC_API_KEY"' >> ~/.bashrc
-        source ~/.bashrc
-        ```
-        :warning: Be advised that when you export your API key inside your shell configuration file, any other process executed from the shell can read it.
-      - **Optional Configuration:**
-        - Set `ANTHROPIC_MODEL` to specify the model to use (default: `claude-3-opus-20240229`)
-        - Set `ANTHROPIC_BASE_URL` to use a custom API endpoint (default: `https://api.anthropic.com`)
-
-7.  **Ollama (Local Models):**
-    - Install Ollama from [https://ollama.ai/](https://ollama.ai/)
-    - Start the Ollama service:
-      ```bash
-      ollama serve
-      ```
-    - Pull a model (e.g., llama2):
-      ```bash
-      ollama pull llama2
-      ```
-    - Set the `OLLAMA_MODEL` environment variable to specify which model to use:
-      - You can temporarily set the environment variable in your current shell session using the following command:
-        ```bash
-        export OLLAMA_MODEL="llama2"
-        ```
-      - For repeated use, you can add the environment variable to your [.env file](#persisting-environment-variables-with-env-files) or your shell's configuration file (like `~/.bashrc`, `~/.zshrc`, or `~/.profile`). For example, the following command adds the environment variable to a `~/.bashrc` file:
-        ```bash
-        echo 'export OLLAMA_MODEL="llama2"' >> ~/.bashrc
-        source ~/.bashrc
-        ```
-      - **Optional Configuration:**
-        - Set `OLLAMA_BASE_URL` to specify the Ollama server URL (default: `http://localhost:11434`)
-
 ### Persisting Environment Variables with `.env` Files
 
 You can create a **`.gemini/.env`** file in your project directory or in your home directory. Creating a plain **`.env`** file also works, but `.gemini/.env` is recommended to keep Gemini variables isolated from other tools.
@@ -209,32 +148,6 @@ mkdir -p ~/.gemini
 cat >> ~/.gemini/.env <<'EOF'
 GOOGLE_CLOUD_PROJECT="your-project-id"
 GEMINI_API_KEY="your-gemini-api-key"
-OPENAI_API_KEY="your-openai-api-key"
-ANTHROPIC_API_KEY="your-anthropic-api-key"
-OLLAMA_MODEL="llama2"
-EOF
-```
-
-**Multi-provider configuration example:**
-
-```bash
-mkdir -p ~/.gemini
-cat >> ~/.gemini/.env <<'EOF'
-# Google AI Services
-GEMINI_API_KEY="your-gemini-api-key"
-GOOGLE_CLOUD_PROJECT="your-project-id"
-
-# OpenAI
-OPENAI_API_KEY="sk-your-openai-api-key"
-OPENAI_MODEL="gpt-4"
-
-# Anthropic
-ANTHROPIC_API_KEY="sk-ant-your-anthropic-api-key"
-ANTHROPIC_MODEL="claude-3-opus-20240229"
-
-# Ollama (Local Models)
-OLLAMA_MODEL="llama2"
-OLLAMA_BASE_URL="http://localhost:11434"
 EOF
 ```
 
@@ -256,18 +169,5 @@ following authentication methods if available:
     - **Using Application Default Credentials (ADC):**
       - Run `gcloud auth application-default login` in your environment to configure ADC.
       - Ensure the `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION` environment variables are set.
-
-3.  **OpenAI:**
-    - Set the `OPENAI_API_KEY` environment variable.
-    - The CLI will use this key to authenticate with the OpenAI API.
-
-4.  **Anthropic:**
-    - Set the `ANTHROPIC_API_KEY` environment variable.
-    - The CLI will use this key to authenticate with the Anthropic API.
-
-5.  **Ollama (Local Models):**
-    - Set the `OLLAMA_MODEL` environment variable.
-    - Ensure the Ollama service is running (`ollama serve`).
-    - The CLI will connect to the local Ollama instance.
 
 If none of these environment variables are set in a non-interactive session, the CLI will exit with an error.
