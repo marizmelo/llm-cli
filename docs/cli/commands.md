@@ -122,6 +122,8 @@ Slash commands provide meta-level control over the CLI itself.
 
 - **`/provider`**
   - **Description:** Manage AI providers - switch between different AI services during an active session.
+  - **Setup:** Before using this command, configure API keys. See `.gemini/SETUP.md` for detailed instructions.
+  - **Quick Setup:** Run `chmod +x .gemini/setup-env.sh && ./.gemini/setup-env.sh` (macOS/Linux) or `bash .gemini/setup-env.sh` (Windows).
   - **Sub-commands:**
     - **`list`**
       - **Description:** Lists all available AI providers with their current status.
