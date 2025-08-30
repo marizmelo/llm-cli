@@ -89,6 +89,9 @@ export OPENAI_MODEL="gpt-4"
 
 # Start CLI and choose "Use OpenAI API Key"
 gemini
+
+# Or switch during an active session
+/provider switch openai
 ```
 
 ### Using Ollama (Local Models)
@@ -106,6 +109,9 @@ export OLLAMA_MODEL="llama2"
 
 # Start CLI and choose "Use Ollama (Local Models)"
 gemini
+
+# Or switch during an active session
+/provider switch ollama
 ```
 
 ### Using Anthropic
@@ -117,6 +123,26 @@ export ANTHROPIC_MODEL="claude-3-opus-20240229"
 
 # Start CLI and choose "Use Anthropic API Key"
 gemini
+
+# Or switch during an active session
+/provider switch anthropic
+```
+
+### Using the /provider Command
+
+The new `/provider` command allows you to switch between AI providers during an active session:
+
+```bash
+# List available providers
+/provider
+
+# Switch to a different provider
+/provider switch openai
+/provider switch ollama
+/provider switch anthropic
+
+# Check current provider status
+/provider status
 ```
 
 ## 🏛️ Technical Implementation

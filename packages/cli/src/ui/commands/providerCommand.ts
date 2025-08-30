@@ -9,6 +9,7 @@ import { MessageType } from '../types.js';
 import type { SlashCommand, SlashCommandActionReturn, CommandContext } from './types.js';
 import { CommandKind } from './types.js';
 import { validateAuthMethod } from '../../config/auth.js';
+import { SettingScope } from '../../config/settings.js';
 
 const providerListCommand: SlashCommand = {
   name: 'list',
@@ -118,7 +119,7 @@ const providerSwitchCommand: SlashCommand = {
       // Update settings to remember the choice
       const settings = context.services.settings;
       if (settings) {
-        settings.setValue('user', 'security.auth.selectedType', authType);
+        settings.setValue(SettingScope.User, 'security.auth.selectedType', authType);
       }
 
       const providerDisplayName = Object.entries(providerMap).find(([key]) => key === providerName)?.[0] || providerName;
@@ -168,15 +169,15 @@ const providerStatusCommand: SlashCommand = {
 
     // Add provider-specific information
     if (currentAuthType === AuthType.USE_OPENAI) {
-      const hasApiKey = !!process.env.OPENAI_API_KEY;
+      const hasApiKey = !!process.env['OPENAI_API_KEY'];
       message += `  OpenAI API Key: ${hasApiKey ? '✅ Configured' : '❌ Not configured'}\n`;
     } else if (currentAuthType === AuthType.USE_ANTHROPIC) {
-      const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
+      const hasApiKey = !!process.env['ANTHROPIC_API_KEY'];
       message += `  Anthropic API Key: ${hasApiKey ? '✅ Configured' : '❌ Not configured'}\n`;
     } else if (currentAuthType === AuthType.USE_OLLAMA) {
-      const model = process.env.OLLAMA_MODEL || 'llama2';
+      const model = process.env['OLLAMA_MODEL'] || 'llama2';
       message += `  Ollama Model: ${model}\n`;
-      message += `  Ollama URL: ${process.env.OLLAMA_BASE_URL || 'http://localhost:11434'}\n`;
+      message += `  Ollama URL: ${process.env['OLLAMA_BASE_URL'] || 'http://localhost:11434'}\n`;
     }
 
     return {
@@ -194,6 +195,15 @@ export const providerCommand: SlashCommand = {
   subCommands: [providerListCommand, providerSwitchCommand, providerStatusCommand],
   action: async (context: CommandContext): Promise<SlashCommandActionReturn> => {
     // Default action when no subcommand is provided - show list
-    return providerListCommand.action!(context, '');
+    const result = await providerListCommand.action!(context, '');
+    if (result) {
+      return result;
+    }
+    // Fallback if the action returns void
+    return {
+      type: 'message',
+      messageType: 'info',
+      content: 'Provider command executed successfully.',
+    };
   },
 };

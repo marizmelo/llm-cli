@@ -118,7 +118,24 @@ Slash commands provide meta-level control over the CLI itself.
       - **Description:** Hide tool descriptions, showing only the tool names.
 
 - **`/privacy`**
-  - **Description:** Display the Privacy Notice and allow users to select whether they consent to the collection of their data for service improvement purposes.
+  - **Description:** Open the privacy notice dialog.
+
+- **`/provider`**
+  - **Description:** Manage AI providers - switch between different AI services during an active session.
+  - **Sub-commands:**
+    - **`list`**
+      - **Description:** Lists all available AI providers with their current status.
+      - **Usage:** `/provider list`
+    - **`switch`**
+      - **Description:** Switches to a different AI provider. Preserves conversation history.
+      - **Usage:** `/provider switch <provider-name>`
+      - **Supported providers:** `google`, `openai`, `anthropic`, `ollama`
+      - **Examples:** 
+        - `/provider switch openai` - Switch to OpenAI GPT models
+        - `/provider switch ollama` - Switch to local Ollama models
+    - **`status`**
+      - **Description:** Shows current provider status including configuration details.
+      - **Usage:** `/provider status`
 
 - **`/quit`** (or **`/exit`**)
   - **Description:** Exit Gemini CLI.
