@@ -1,6 +1,6 @@
 {
   "name": "@marizmelo/llm-cli",
-  "version": "0.2.2",
+  "version": "0.0.2",
   "description": "LLM CLI - Multi-provider AI assistant for the command line",
   "repository": {
     "type": "git",
@@ -22,7 +22,8 @@
     "typecheck": "tsc --noEmit"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "config": {
     "sandboxImageUri": "us-docker.pkg.dev/gemini-code-dev/gemini-cli/sandbox:0.2.2"

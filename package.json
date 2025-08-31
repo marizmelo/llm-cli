@@ -1,6 +1,6 @@
 {
   "name": "@marizmelo/llm-cli",
-  "version": "0.2.2",
+  "version": "0.0.2",
   "engines": {
     "node": ">=20.0.0"
   },
@@ -8,7 +8,6 @@
   "workspaces": [
     "packages/*"
   ],
-  "private": "true",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/marizmelo/llm-cli.git"
@@ -53,7 +52,7 @@
     "clean": "node scripts/clean.js"
   },
   "bin": {
-    "gemini": "bundle/gemini.js"
+    "llm-cli": "bundle/gemini.js"
   },
   "files": [
     "bundle/",
