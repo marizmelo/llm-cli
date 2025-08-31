@@ -1,6 +1,6 @@
 # LLM CLI
 
-Multi-provider AI assistant for the command line supporting OpenAI, Anthropic Claude, Ollama, and more.
+LLM-CLI is a command-line AI assistant that's a fork of Gemini Cli. Unlike its predecessor, LLM-CLI is a multi-provider tool that supports Gemini, OpenAI, Anthropic Claude, Ollama, and more, making it a powerful agent for coding. This means you can now use all of Gemini Cli’s powerful features with your preferred large language model—whether it's running in the cloud or locally.
 
 ## Installation
 
