@@ -77,8 +77,8 @@ export function getInstallationInfo(
     // Check for Homebrew
     if (process.platform === 'darwin') {
       try {
-        // The package name in homebrew is gemini-cli
-        childProcess.execSync('brew list -1 | grep -q "^gemini-cli$"', {
+        // The package name in homebrew would be llm-cli
+        childProcess.execSync('brew list -1 | grep -q "^llm-cli$"', {
           stdio: 'ignore',
         });
         return {
@@ -88,14 +88,14 @@ export function getInstallationInfo(
             'Installed via Homebrew. Please update with "brew upgrade".',
         };
       } catch (_error) {
-        // Brew is not installed or gemini-cli is not installed via brew.
+        // Brew is not installed or llm-cli is not installed via brew.
         // Continue to the next check.
       }
     }
 
     // Check for pnpm
     if (realPath.includes('/.pnpm/global')) {
-      const updateCommand = 'pnpm add -g @google/gemini-cli@latest';
+      const updateCommand = 'pnpm add -g @marizmelo/llm-cli@latest';
       return {
         packageManager: PackageManager.PNPM,
         isGlobal: true,
@@ -108,7 +108,7 @@ export function getInstallationInfo(
 
     // Check for yarn
     if (realPath.includes('/.yarn/global')) {
-      const updateCommand = 'yarn global add @google/gemini-cli@latest';
+      const updateCommand = 'yarn global add @marizmelo/llm-cli@latest';
       return {
         packageManager: PackageManager.YARN,
         isGlobal: true,
@@ -128,7 +128,7 @@ export function getInstallationInfo(
       };
     }
     if (realPath.includes('/.bun/bin')) {
-      const updateCommand = 'bun add -g @google/gemini-cli@latest';
+      const updateCommand = 'bun add -g @marizmelo/llm-cli@latest';
       return {
         packageManager: PackageManager.BUN,
         isGlobal: true,
@@ -161,7 +161,7 @@ export function getInstallationInfo(
     }
 
     // Assume global npm
-    const updateCommand = 'npm install -g @google/gemini-cli@latest';
+    const updateCommand = 'npm install -g @marizmelo/llm-cli@latest';
     return {
       packageManager: PackageManager.NPM,
       isGlobal: true,

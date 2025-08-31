@@ -58,7 +58,7 @@ export const getLatestGitHubRelease = async (
   try {
     const controller = new AbortController();
 
-    const endpoint = `https://api.github.com/repos/google-github-actions/run-gemini-cli/releases/latest`;
+    const endpoint = `https://api.github.com/repos/marizmelo/llm-cli/releases/latest`;
 
     const response = await fetch(endpoint, {
       method: 'GET',
@@ -83,9 +83,9 @@ export const getLatestGitHubRelease = async (
     }
     return releaseTag;
   } catch (_error) {
-    console.debug(`Failed to determine latest run-gemini-cli release:`, _error);
+    console.debug(`Failed to determine latest llm-cli release:`, _error);
     throw new Error(
-      `Unable to determine the latest run-gemini-cli release on GitHub.`,
+      `Unable to determine the latest llm-cli release on GitHub.`,
     );
   }
 };

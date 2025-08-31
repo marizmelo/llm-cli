@@ -1,5 +1,5 @@
 {
-  "name": "llm-cli",
+  "name": "@marizmelo/llm-cli",
   "version": "0.2.2",
   "description": "LLM CLI - Multi-provider AI assistant for the command line",
   "repository": {

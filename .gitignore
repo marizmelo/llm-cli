@@ -9,6 +9,8 @@
 !gemini/SETUP.md
 
 .claude/
+.archive/
+CLAUDE.md
 
 # Note: .gemini-clipboard/ is NOT in gitignore so Gemini can access pasted images
 

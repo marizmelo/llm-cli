@@ -1,5 +1,5 @@
 {
-  "name": "llm-cli-core",
+  "name": "@marizmelo/llm-cli-core",
   "version": "0.2.2",
   "description": "LLM CLI Core - Multi-provider AI assistant core library",
   "repository": {

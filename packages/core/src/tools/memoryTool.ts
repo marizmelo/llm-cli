@@ -61,8 +61,8 @@ Do NOT use this tool:
 `;
 
 export const GEMINI_CONFIG_DIR = '.gemini';
-export const DEFAULT_CONTEXT_FILENAME = 'GEMINI.md';
-export const MEMORY_SECTION_HEADER = '## Gemini Added Memories';
+export const DEFAULT_CONTEXT_FILENAME = 'LLM-CLI.md';
+export const MEMORY_SECTION_HEADER = '## LLM CLI Added Memories';
 
 // This variable will hold the currently configured filename for GEMINI.md context files.
 // It defaults to DEFAULT_CONTEXT_FILENAME but can be overridden by setGeminiMdFilename.
