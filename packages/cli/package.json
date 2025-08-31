@@ -80,5 +80,27 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "keywords": [
+    "llm",
+    "cli",
+    "ai",
+    "assistant",
+    "ollama",
+    "openai",
+    "anthropic",
+    "claude",
+    "gpt",
+    "command-line",
+    "multi-provider"
+  ],
+  "author": "marizmelo",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/marizmelo/llm-cli#readme",
+  "bugs": {
+    "url": "https://github.com/marizmelo/llm-cli/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
