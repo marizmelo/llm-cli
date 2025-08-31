@@ -120,24 +120,248 @@ Slash commands provide meta-level control over the CLI itself.
 - **`/privacy`**
   - **Description:** Open the privacy notice dialog.
 
-- **`/provider`**
-  - **Description:** Manage AI providers - switch between different AI services during an active session.
-  - **Setup:** Before using this command, configure API keys. See `.gemini/SETUP.md` for detailed instructions.
-  - **Quick Setup:** Run `chmod +x .gemini/setup-env.sh && ./.gemini/setup-env.sh` (macOS/Linux) or `bash .gemini/setup-env.sh` (Windows).
-  - **Sub-commands:**
-    - **`list`**
-      - **Description:** Lists all available AI providers with their current status.
-      - **Usage:** `/provider list`
-    - **`switch`**
-      - **Description:** Switches to a different AI provider. Preserves conversation history.
-      - **Usage:** `/provider switch <provider-name>`
-      - **Supported providers:** `google`, `openai`, `anthropic`, `ollama`
-      - **Examples:** 
-        - `/provider switch openai` - Switch to OpenAI GPT models
-        - `/provider switch ollama` - Switch to local Ollama models
-    - **`status`**
-      - **Description:** Shows current provider status including configuration details.
-      - **Usage:** `/provider status`
+## `/provider`
+
+Manage AI providers and switch between different AI services.
+
+### Subcommands
+
+#### `/provider list`
+
+Lists all available AI providers with their setup status.
+
+**Output:**
+- Shows all available providers (OpenAI, Anthropic, Google, Ollama)
+- Displays configuration status (✅ Configured / ❌ Not configured)
+- Shows current model for configured providers
+- Indicates which provider is currently active
+
+**Example:**
+```
+🤖 Available AI Providers:
+
+  → Google (Gemini) (current)
+    Google's latest AI models
+    Status: ✅ Configured
+    Model: gemini-1.5-pro-latest
+
+  OpenAI
+    GPT-4, GPT-3.5-turbo, and other models
+    Status: ❌ Not configured
+
+📋 Commands:
+  /provider switch <provider>  - Switch to a provider
+  /provider setup <provider>  - Interactive setup
+  /provider status           - Show current status
+```
+
+#### `/provider switch <provider>`
+
+Switches to a different AI provider. If the provider is not configured, it will show setup instructions.
+
+**Parameters:**
+- `<provider>`: The provider name (openai, anthropic, google, ollama)
+
+**Behavior:**
+- Checks if the provider is properly configured
+- Validates API keys and environment variables
+- Shows setup instructions if provider is not configured
+- Switches to the provider if properly configured
+- Updates settings to remember the choice
+
+**Example:**
+```bash
+/provider switch openai
+```
+
+**Output when not configured:**
+```
+🔧 Setting up OpenAI...
+
+📋 Requirements:
+  • API Key: Format: sk-*
+  • Get API key from: https://platform.openai.com/api-keys
+
+❌ Missing required environment variables:
+  • OPENAI_API_KEY
+
+💡 To complete setup:
+  1. Get your API key from https://platform.openai.com/api-keys
+  2. Add to your .env file:
+     OPENAI_API_KEY="your-api-key"
+  3. Run "/provider switch openai"
+
+📝 Or use the interactive setup: /provider setup openai
+```
+
+**Output when configured:**
+```
+✅ Successfully switched to OpenAI provider!
+
+Model: gpt-4
+```
+
+#### `/provider setup <provider>`
+
+Shows interactive setup instructions for a provider.
+
+**Parameters:**
+- `<provider>`: The provider name (openai, anthropic, google, ollama)
+
+**Behavior:**
+- Shows current configuration if provider is already set up
+- Provides detailed setup instructions if not configured
+- Lists required environment variables
+- Shows API key format requirements
+- Provides links to get API keys
+
+**Example:**
+```bash
+/provider setup anthropic
+```
+
+#### `/provider status`
+
+Shows detailed status of the current provider and configuration.
+
+**Output:**
+- Current provider name and auth type
+- Current model being used
+- Configuration status (complete/incomplete)
+- Environment variables (with API keys masked)
+- Missing configuration items
+- Location of .env file
+- Model update status for all providers
+
+**Example:**
+```
+📊 Current Provider Status:
+
+  Provider: OpenAI
+  Auth Type: USE_OPENAI
+  Model: gpt-4
+  Configuration: ✅ Complete
+
+📋 Environment Variables:
+  OPENAI_API_KEY: ***abcd
+  OPENAI_MODEL: gpt-4
+
+📁 .env file: /path/to/project/.gemini/.env
+
+🔄 Model Update Status:
+  ✅ openai: Up to date (2024-01-15)
+  🔄 anthropic: Needs update (2024-01-10)
+  ✅ google: Up to date (2024-01-14)
+  🔄 ollama: Needs update (Never)
+```
+
+#### `/provider discover <provider>`
+
+Discovers and updates available models for a specific provider.
+
+**Parameters:**
+- `<provider>`: The provider name (openai, anthropic, google, ollama)
+
+**Behavior:**
+- Fetches latest model list from provider API
+- Updates local configuration with new models
+- Shows added/removed models
+- Requires valid API key for the provider
+
+**Example:**
+```bash
+/provider discover openai
+```
+
+**Output:**
+```
+✅ Successfully updated models for openai
+
+📋 Available models (12):
+  • gpt-4
+  • gpt-4-1106-preview
+  • gpt-4-turbo
+  • gpt-4-turbo-preview
+  • gpt-3.5-turbo
+  • gpt-3.5-turbo-16k
+  • text-embedding-ada-002
+  • text-embedding-3-large
+  • text-embedding-3-small
+```
+
+#### `/provider update`
+
+Updates all provider models that need updating.
+
+**Behavior:**
+- Checks all providers for outdated model lists
+- Updates only providers that need updating
+- Shows progress and results for each provider
+- Requires valid API keys for providers being updated
+
+**Example:**
+```bash
+/provider update
+```
+
+**Output:**
+```
+🔄 Updating models for 2 provider(s)...
+
+✅ openai: Successfully updated models for openai
+❌ anthropic: Failed to update models for anthropic. Check your API key and try again.
+```
+
+### Provider Configuration
+
+The CLI uses a JSON-based provider configuration system located at `.gemini/providers.json`. This file defines:
+
+- **Provider names and descriptions**
+- **Required and optional environment variables**
+- **API key formats and validation rules**
+- **Default models and available model options**
+- **Links to API key acquisition pages**
+
+### Environment Variables
+
+Each provider requires specific environment variables to be set in your `.env` file:
+
+#### OpenAI
+- `OPENAI_API_KEY` (required): Your OpenAI API key
+- `OPENAI_MODEL` (optional): Model to use (default: gpt-4)
+- `OPENAI_BASE_URL` (optional): Custom API endpoint
+
+#### Anthropic
+- `ANTHROPIC_API_KEY` (required): Your Anthropic API key
+- `ANTHROPIC_MODEL` (optional): Model to use (default: claude-3-opus-20240229)
+- `ANTHROPIC_BASE_URL` (optional): Custom API endpoint
+
+#### Google (Gemini)
+- `GEMINI_API_KEY` (required): Your Google AI API key
+- `GEMINI_MODEL` (optional): Model to use (default: gemini-1.5-pro-latest)
+
+#### Ollama (Local)
+- `OLLAMA_MODEL` (required): Local model name (default: llama2)
+- `OLLAMA_BASE_URL` (optional): Ollama server URL (default: http://localhost:11434)
+
+### Setup
+
+For detailed setup instructions, see [Authentication](./authentication.md).
+
+**Quick setup commands:**
+
+**macOS/Linux:**
+```bash
+chmod +x .gemini/setup-env.sh
+./.gemini/setup-env.sh
+```
+
+**Windows:**
+```bash
+bash .gemini/setup-env.sh
+```
+
+For manual setup, see `.gemini/SETUP.md`.
 
 - **`/quit`** (or **`/exit`**)
   - **Description:** Exit Gemini CLI.

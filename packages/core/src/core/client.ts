@@ -253,7 +253,9 @@ export class GeminiClient {
     ];
     try {
       const userMemory = this.config.getUserMemory();
-      const systemInstruction = getCoreSystemPrompt(userMemory);
+      const contentGeneratorConfig = this.config.getContentGeneratorConfig();
+      const providerName = contentGeneratorConfig?.provider;
+      const systemInstruction = getCoreSystemPrompt(userMemory, providerName);
       const model = this.config.getModel();
       const generateContentConfigWithThinking = isThinkingSupported(model)
         ? {

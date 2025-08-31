@@ -66,7 +66,7 @@ export class OpenAIProvider implements ModelProvider {
   private baseUrl: string;
   private model: string;
 
-  constructor(config: ModelProviderConfig) {
+  constructor(config: ModelProviderConfig, gcConfig?: any) {
     this.apiKey = config.apiKey || '';
     this.baseUrl = config.baseUrl || 'https://api.openai.com/v1';
     this.model = config.model;

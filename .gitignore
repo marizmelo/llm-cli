@@ -5,6 +5,10 @@
 # gemini-cli settings
 .gemini/
 !gemini/config.yaml
+!gemini/.env.example
+!gemini/SETUP.md
+
+.claude/
 
 # Note: .gemini-clipboard/ is NOT in gitignore so Gemini can access pasted images
 

@@ -50,7 +50,7 @@ export class OllamaProvider implements ModelProvider {
   private baseUrl: string;
   private model: string;
 
-  constructor(config: ModelProviderConfig) {
+  constructor(config: ModelProviderConfig, gcConfig?: any) {
     this.baseUrl = config.baseUrl || 'http://localhost:11434';
     this.model = config.model;
   }
@@ -205,7 +205,8 @@ export class OllamaProvider implements ModelProvider {
               },
             ],
           },
-          finishReason: ollamaResponse.done ? 'STOP' : 'MAX_TOKENS',
+          // Ollama doesn't have token limits like Gemini - it just stops when complete
+          finishReason: ollamaResponse.done ? 'STOP' : 'STOP',
         },
       ],
     };

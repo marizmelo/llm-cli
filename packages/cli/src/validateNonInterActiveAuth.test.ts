@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { NonInteractiveConfig } from './validateNonInterActiveAuth.js';
 import { validateNonInteractiveAuth } from './validateNonInterActiveAuth.js';
-import { AuthType } from '@google/gemini-cli-core';
+import { AuthType } from '../../core/dist/src/core/contentGenerator.js';
 import * as auth from './config/auth.js';
 
 describe('validateNonInterActiveAuth', () => {

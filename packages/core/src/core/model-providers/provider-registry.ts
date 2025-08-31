@@ -7,6 +7,7 @@
 import type { ModelProvider, ModelProviderConfig } from './index.js';
 import { GoogleProvider } from './google-provider.js';
 import { OpenAIProvider } from './openai-provider.js';
+import { AnthropicProvider } from './anthropic-provider.js';
 import { OllamaProvider } from './ollama-provider.js';
 import type { Config } from '../../config/config.js';
 
@@ -19,6 +20,7 @@ export class ModelProviderRegistry {
   constructor() {
     this.register('google', GoogleProvider);
     this.register('openai', OpenAIProvider);
+    this.register('anthropic', AnthropicProvider);
     this.register('ollama', OllamaProvider);
   }
 

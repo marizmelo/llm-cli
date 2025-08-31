@@ -6,7 +6,8 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import type { LoadedSettings, SettingScope } from '../../config/settings.js';
-import { AuthType, type Config } from '@google/gemini-cli-core';
+import { AuthType } from '@google/gemini-cli-core';
+import type { Config } from '@google/gemini-cli-core';
 import {
   clearCachedCredentialFile,
   getErrorMessage,
