@@ -85,11 +85,11 @@ export interface CliArgs {
 export async function parseArguments(settings: Settings): Promise<CliArgs> {
   const yargsInstance = yargs(hideBin(process.argv))
     .locale('en')
-    .scriptName('gemini')
+    .scriptName('llm-cli')
     .usage(
-      'Usage: gemini [options] [command]\n\nGemini CLI - Launch an interactive CLI, use -p/--prompt for non-interactive mode',
+      'Usage: llm-cli [options] [command]\n\nLLM CLI - Launch an interactive multi-provider AI assistant, use -p/--prompt for non-interactive mode',
     )
-    .command('$0', 'Launch Gemini CLI', (yargsInstance) =>
+    .command('$0', 'Launch LLM CLI', (yargsInstance) =>
       yargsInstance
         .option('model', {
           alias: 'm',

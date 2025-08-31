@@ -1,15 +1,15 @@
 {
-  "name": "@google/gemini-cli",
+  "name": "llm-cli",
   "version": "0.2.2",
-  "description": "Gemini CLI",
+  "description": "LLM CLI - Multi-provider AI assistant for the command line",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/google-gemini/gemini-cli.git"
+    "url": "git+https://github.com/marizmelo/llm-cli.git"
   },
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "gemini": "dist/index.js"
+    "llm-cli": "dist/index.js"
   },
   "scripts": {
     "build": "node ../../scripts/build_package.js",
