@@ -20,11 +20,11 @@ import { isGitRepository } from '../utils/gitUtils.js';
 import { MemoryTool, GEMINI_CONFIG_DIR } from '../tools/memoryTool.js';
 
 export function getCoreSystemPrompt(userMemory?: string, providerName?: string): string {
-  // if GEMINI_SYSTEM_MD is set (and not 0|false), override system prompt from file
-  // default path is .gemini/system.md but can be modified via custom path in GEMINI_SYSTEM_MD
+  // if LLM_CLI_SYSTEM_MD is set (and not 0|false), override system prompt from file
+  // default path is .gemini/system.md but can be modified via custom path in LLM_CLI_SYSTEM_MD
   let systemMdEnabled = false;
   let systemMdPath = path.resolve(path.join(GEMINI_CONFIG_DIR, 'system.md'));
-  const systemMdVar = process.env['GEMINI_SYSTEM_MD'];
+  const systemMdVar = process.env['LLM_CLI_SYSTEM_MD'] || process.env['GEMINI_SYSTEM_MD']; // backward compatibility
   if (systemMdVar) {
     const systemMdVarLower = systemMdVar.toLowerCase();
     if (!['0', 'false'].includes(systemMdVarLower)) {
@@ -36,7 +36,7 @@ export function getCoreSystemPrompt(userMemory?: string, providerName?: string):
         } else if (customPath === '~') {
           customPath = os.homedir();
         }
-        systemMdPath = path.resolve(customPath); // use custom path from GEMINI_SYSTEM_MD
+        systemMdPath = path.resolve(customPath); // use custom path from LLM_CLI_SYSTEM_MD
       }
       // require file to exist when override is enabled
       if (!fs.existsSync(systemMdPath)) {
@@ -270,14 +270,14 @@ You are an AI assistant powered by ${providerName === 'ollama' ? 'a local model 
 ` : ''}
 `.trim();
 
-  // if GEMINI_WRITE_SYSTEM_MD is set (and not 0|false), write base system prompt to file
-  const writeSystemMdVar = process.env['GEMINI_WRITE_SYSTEM_MD'];
+  // if LLM_CLI_WRITE_SYSTEM_MD is set (and not 0|false), write base system prompt to file
+  const writeSystemMdVar = process.env['LLM_CLI_WRITE_SYSTEM_MD'] || process.env['GEMINI_WRITE_SYSTEM_MD']; // backward compatibility
   if (writeSystemMdVar) {
     const writeSystemMdVarLower = writeSystemMdVar.toLowerCase();
     if (!['0', 'false'].includes(writeSystemMdVarLower)) {
       if (['1', 'true'].includes(writeSystemMdVarLower)) {
         fs.mkdirSync(path.dirname(systemMdPath), { recursive: true });
-        fs.writeFileSync(systemMdPath, basePrompt); // write to default path, can be modified via GEMINI_SYSTEM_MD
+        fs.writeFileSync(systemMdPath, basePrompt); // write to default path, can be modified via LLM_CLI_SYSTEM_MD
       } else {
         let customPath = writeSystemMdVar;
         if (customPath.startsWith('~/')) {
@@ -287,7 +287,7 @@ You are an AI assistant powered by ${providerName === 'ollama' ? 'a local model 
         }
         const resolvedPath = path.resolve(customPath);
         fs.mkdirSync(path.dirname(resolvedPath), { recursive: true });
-        fs.writeFileSync(resolvedPath, basePrompt); // write to custom path from GEMINI_WRITE_SYSTEM_MD
+        fs.writeFileSync(resolvedPath, basePrompt); // write to custom path from LLM_CLI_WRITE_SYSTEM_MD
       }
     }
   }
