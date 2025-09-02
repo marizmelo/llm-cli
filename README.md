@@ -22,30 +22,46 @@ llm-cli --prompt "What is 2+2?"
 ## Features
 
 - 🤖 Multi-provider support (OpenAI, Anthropic, Ollama, Gemini)
-- 🔧 Interactive CLI interface
+- 🔧 Interactive CLI interface with full tool/function support
 - 📁 Context-aware file processing
 - 🔌 Extensible with custom commands
 - 🎯 Provider-specific model switching
 - 💾 Memory and context management
+- 🔑 Secure API key management with persistent settings
+- 🛠️ Full tool/function calling support for OpenAI and Anthropic
 
-## Provider Setup
+## What's New in v0.1.0
 
-### Ollama (Local)
+### Enhanced Provider Support
+- **OpenAI & Anthropic Tool Support**: Both providers now have full function/tool calling capabilities, allowing them to use all available CLI tools (file operations, shell commands, web searches, etc.)
+- **Persistent API Key Management**: API keys are now saved to settings and automatically synced to environment variables on startup
+- **Improved Provider Setup**: Simplified setup process with `/provider setup <provider> <api-key>` command
+- **Better Error Handling**: Fixed streaming response issues and improved error messages
+
+### Provider Setup
+
+#### Quick Setup (New Method)
+```bash
+# Setup providers with persistent API keys
+llm-cli
+/provider setup openai sk-your-api-key
+/provider setup anthropic sk-ant-your-api-key
+/provider switch openai
+```
+
+#### Ollama (Local)
 ```bash
 # Install Ollama first, then:
-llm-cli /provider switch ollama
+llm-cli
+/provider switch ollama
 ```
 
-### OpenAI
+#### Traditional Setup (Environment Variables)
 ```bash
+# Still supported for backward compatibility
 export OPENAI_API_KEY="your-api-key"
-llm-cli /provider switch openai
-```
-
-### Anthropic Claude
-```bash
 export ANTHROPIC_API_KEY="your-api-key"
-llm-cli /provider switch anthropic
+llm-cli
 ```
 
 ## Documentation
