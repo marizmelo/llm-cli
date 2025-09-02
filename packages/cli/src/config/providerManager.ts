@@ -9,6 +9,9 @@ import * as path from 'node:path';
 import { homedir } from 'node:os';
 import * as dotenv from 'dotenv';
 import { ModelDiscovery } from './modelDiscovery.js';
+import type { LoadedSettings } from './settings.js';
+import type { ProviderConfig as SettingsProviderConfig } from './settingsSchema.js';
+import { SettingScope } from './settings.js';
 
 export interface ProviderConfig {
   name: string;
@@ -36,10 +39,12 @@ export interface ProviderSetupStatus {
 export class ProviderManager {
   private providersConfig: ProvidersConfig;
   private envFilePath: string | null;
+  private settings: LoadedSettings | null = null;
 
-  constructor() {
+  constructor(settings?: LoadedSettings) {
     this.providersConfig = this.loadProvidersConfig();
     this.envFilePath = this.findEnvFile();
+    this.settings = settings || null;
   }
 
   private loadProvidersConfig(): ProvidersConfig {
@@ -221,6 +226,124 @@ export class ProviderManager {
       }
     }
     return null;
+  }
+
+  /**
+   * Get provider configuration from settings
+   */
+  getProviderFromSettings(providerName: string): SettingsProviderConfig | null {
+    if (!this.settings?.merged.providers) {
+      return null;
+    }
+    
+    return this.settings.merged.providers.find(
+      provider => provider.name === providerName
+    ) || null;
+  }
+
+  /**
+   * Save provider configuration to settings
+   */
+  saveProviderToSettings(providerName: string, apiKey: string, model?: string): void {
+    if (!this.settings) {
+      throw new Error('Settings not available');
+    }
+
+    const config = this.getProviderConfig(providerName);
+    if (!config) {
+      throw new Error(`Unknown provider: ${providerName}`);
+    }
+
+    const existingProviders = this.settings.merged.providers || [];
+    const existingIndex = existingProviders.findIndex(p => p.name === config.authType);
+    
+    const providerConfig: SettingsProviderConfig = {
+      name: config.authType,
+      apiKey,
+      model: model || config.defaultModel
+    };
+
+    if (existingIndex >= 0) {
+      existingProviders[existingIndex] = providerConfig;
+    } else {
+      existingProviders.push(providerConfig);
+    }
+
+    this.settings.setValue(SettingScope.User, 'providers', existingProviders);
+  }
+
+  /**
+   * Check if settings have changed
+   */
+  hasSettingsChanged(newSettings: LoadedSettings | null): boolean {
+    return this.settings !== newSettings;
+  }
+
+  /**
+   * Update settings
+   */
+  updateSettings(newSettings: LoadedSettings | null): void {
+    this.settings = newSettings;
+  }
+
+  /**
+   * Validate API key format
+   */
+  validateApiKeyFormat(providerName: string, apiKey: string): boolean {
+    const config = this.getProviderConfig(providerName);
+    if (!config) return false;
+
+    switch (config.apiKeyFormat) {
+      case 'sk-*':
+        return apiKey.startsWith('sk-');
+      case 'sk-ant-*':
+        return apiKey.startsWith('sk-ant-');
+      case 'alphanumeric':
+        return /^[A-Za-z0-9_-]+$/.test(apiKey);
+      case 'none':
+        return true;
+      default:
+        return true;
+    }
+  }
+
+  /**
+   * Sync API keys from settings to environment variables
+   * This ensures that the existing authentication flow continues to work
+   */
+  syncSettingsToEnv(): void {
+    if (!this.settings?.merged.providers) {
+      return;
+    }
+
+    // Map provider auth types from settings to environment variable names
+    const providerEnvMap: Record<string, string> = {
+      'USE_OPENAI': 'OPENAI_API_KEY',
+      'USE_ANTHROPIC': 'ANTHROPIC_API_KEY',
+      'USE_GEMINI': 'GEMINI_API_KEY',
+      'USE_VERTEX_AI': 'GOOGLE_API_KEY',
+      'openai-api-key': 'OPENAI_API_KEY',  // Support both formats
+      'anthropic-api-key': 'ANTHROPIC_API_KEY',
+      'gemini-api-key': 'GEMINI_API_KEY',
+      'google-vertex-ai': 'GOOGLE_API_KEY',
+    };
+
+    // Sync each provider's API key to its environment variable
+    for (const provider of this.settings.merged.providers) {
+      const envVar = providerEnvMap[provider.name];
+      if (envVar && provider.apiKey) {
+        process.env[envVar] = provider.apiKey;
+        
+        // Also sync model if provided
+        if (provider.model) {
+          if (provider.name === 'USE_OPENAI') {
+            process.env['OPENAI_MODEL'] = provider.model;
+          } else if (provider.name === 'USE_ANTHROPIC') {
+            process.env['ANTHROPIC_MODEL'] = provider.model;
+          }
+        }
+      }
+    }
   }
 
   async setupProvider(provider: string, _context: unknown): Promise<{ type: 'message'; messageType: 'info' | 'error'; content: string }> {

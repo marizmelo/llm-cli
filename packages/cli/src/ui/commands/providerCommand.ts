@@ -12,7 +12,17 @@ import { validateAuthMethod } from '../../config/auth.js';
 import { SettingScope } from '../../config/settings.js';
 import { ProviderManager } from '../../config/providerManager.js';
 
-const providerManager = new ProviderManager();
+// ProviderManager will be instantiated with settings from context
+let providerManager: ProviderManager;
+
+function getProviderManager(context: CommandContext): ProviderManager {
+  if (!providerManager || providerManager.hasSettingsChanged(context.services.settings)) {
+    providerManager = new ProviderManager(context.services.settings || undefined);
+    // Sync settings to environment variables on initialization
+    providerManager.syncSettingsToEnv();
+  }
+  return providerManager;
+}
 
 // Enhanced list command
 const providerListCommand: SlashCommand = {
@@ -20,14 +30,14 @@ const providerListCommand: SlashCommand = {
   description: 'List available AI providers with setup status',
   kind: CommandKind.BUILT_IN,
   action: async (context: CommandContext): Promise<SlashCommandActionReturn> => {
-    const providers = providerManager.getAvailableProviders();
+    const providers = getProviderManager(context).getAvailableProviders();
     const currentAuthType = context.services.config?.getContentGeneratorConfig()?.authType;
 
     let message = '🤖 Available AI Providers:\n\n';
     
     for (const providerKey of providers) {
-      const config = providerManager.getProviderConfig(providerKey)!;
-      const setup = providerManager.checkProviderSetup(providerKey);
+      const config = getProviderManager(context).getProviderConfig(providerKey)!;
+      const setup = getProviderManager(context).checkProviderSetup(providerKey);
       const isCurrent = currentAuthType === config.authType;
       
       const status = isCurrent ? ' (current)' : '';
@@ -74,23 +84,26 @@ const providerSwitchCommand: SlashCommand = {
       return {
         type: 'message',
         messageType: 'error',
-        content: 'Usage: /provider switch <provider-name>\nAvailable providers: ' + providerManager.getAvailableProviders().join(', '),
+        content: 'Usage: /provider switch <provider-name>\nAvailable providers: ' + getProviderManager(context).getAvailableProviders().join(', '),
       };
     }
 
-    const config = providerManager.getProviderConfig(providerName);
+    const config = getProviderManager(context).getProviderConfig(providerName);
     if (!config) {
       return {
         type: 'message',
         messageType: 'error',
-        content: `Unknown provider: ${providerName}\nAvailable providers: ${providerManager.getAvailableProviders().join(', ')}`,
+        content: `Unknown provider: ${providerName}\nAvailable providers: ${getProviderManager(context).getAvailableProviders().join(', ')}`,
       };
     }
 
+    // Sync settings to environment before checking setup
+    getProviderManager(context).syncSettingsToEnv();
+    
     // Check if provider is properly configured
-    const setup = providerManager.checkProviderSetup(providerName);
+    const setup = getProviderManager(context).checkProviderSetup(providerName);
     if (!setup.configured) {
-      return await providerManager.setupProvider(providerName, context);
+      return await getProviderManager(context).setupProvider(providerName, context);
     }
 
     // Validate the auth method
@@ -146,7 +159,7 @@ const providerSwitchCommand: SlashCommand = {
       };
     }
   },
-  completion: async (context: CommandContext, partialArg: string): Promise<string[]> => providerManager.getAvailableProviders().filter(provider => 
+  completion: async (context: CommandContext, partialArg: string): Promise<string[]> => getProviderManager(context).getAvailableProviders().filter(provider => 
       provider.startsWith(partialArg.toLowerCase())
     ),
 };
@@ -154,75 +167,86 @@ const providerSwitchCommand: SlashCommand = {
 // New setup command
 const providerSetupCommand: SlashCommand = {
   name: 'setup',
-  description: 'Interactive setup for a provider',
+  description: 'Setup a provider with API key',
   kind: CommandKind.BUILT_IN,
   action: async (context: CommandContext, args: string): Promise<SlashCommandActionReturn> => {
-    const providerName = args.trim().toLowerCase();
+    const parts = args.trim().split(' ');
+    const providerName = parts[0]?.toLowerCase();
+    const apiKey = parts[1];
     
     if (!providerName) {
       return {
         type: 'message',
         messageType: 'error',
-        content: 'Usage: /provider setup <provider-name>\nAvailable providers: ' + providerManager.getAvailableProviders().join(', '),
+        content: 'Usage: /provider setup <provider-name> <api-key>\nAvailable providers: ' + getProviderManager(context).getAvailableProviders().join(', '),
       };
     }
 
-    const config = providerManager.getProviderConfig(providerName);
+    const config = getProviderManager(context).getProviderConfig(providerName);
     if (!config) {
       return {
         type: 'message',
         messageType: 'error',
-        content: `Unknown provider: ${providerName}\nAvailable providers: ${providerManager.getAvailableProviders().join(', ')}`,
+        content: `Unknown provider: ${providerName}\nAvailable providers: ${getProviderManager(context).getAvailableProviders().join(', ')}`,
       };
     }
 
-    const setup = providerManager.checkProviderSetup(providerName);
-    
-    if (setup.configured && setup.hasApiKey) {
-      // Provider is already configured, offer to update
-      let message = `✅ ${config.name} is already configured!\n\nCurrent settings:\n`;
-      
-      for (const varName of [...config.requiredEnvVars, ...config.optionalEnvVars]) {
-        const value = setup.envVars[varName];
-        if (value) {
-          const displayValue = varName.includes('KEY') ? '***' + value.slice(-4) : value;
-          message += `  ${varName}: ${displayValue}\n`;
-        }
+    // If no API key provided, show current status
+    if (!apiKey) {
+      const settingsProvider = getProviderManager(context).getProviderFromSettings(config.authType);
+      if (settingsProvider?.apiKey) {
+        const displayKey = '***' + settingsProvider.apiKey.slice(-4);
+        return {
+          type: 'message',
+          messageType: 'info',
+          content: `✅ ${config.name} is already configured!\n\nAPI Key: ${displayKey}\nModel: ${settingsProvider.model || config.defaultModel}\n\nUse "/provider switch ${providerName}" to activate this provider.`
+        };
+      } else {
+        return {
+          type: 'message',
+          messageType: 'error',
+          content: `Usage: /provider setup ${providerName} <api-key>\n\nGet your API key from: ${config.apiKeyUrl}`
+        };
       }
+    }
+
+    // Validate API key format
+    if (!getProviderManager(context).validateApiKeyFormat(providerName, apiKey)) {
+      return {
+        type: 'message',
+        messageType: 'error',
+        content: `Invalid API key format for ${config.name}.\nExpected format: ${config.apiKeyFormat}\n\nGet your API key from: ${config.apiKeyUrl}`
+      };
+    }
+
+    // Save to settings
+    try {
+      getProviderManager(context).saveProviderToSettings(providerName, apiKey);
       
-      message += `\nUse "/provider switch ${providerName}" to activate this provider.`;
+      // Sync settings to environment variables immediately
+      getProviderManager(context).syncSettingsToEnv();
       
+      // Update selected auth type
+      const settings = context.services.settings;
+      if (settings) {
+        settings.setValue(SettingScope.User, 'security.auth.selectedType', config.authType as AuthType);
+      }
+
+      const displayKey = '***' + apiKey.slice(-4);
       return {
         type: 'message',
         messageType: 'info',
-        content: message
+        content: `✅ Successfully configured ${config.name}!\n\nAPI Key: ${displayKey}\nModel: ${config.defaultModel}\n\nUse "/provider switch ${providerName}" to activate this provider.`
+      };
+    } catch (error) {
+      return {
+        type: 'message',
+        messageType: 'error',
+        content: `Failed to save provider configuration: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
-
-    // Provider needs setup
-    let message = `🔧 Setting up ${config.name}...\n\n`;
-    message += `📋 Requirements:\n`;
-    message += `  • API Key: ${config.apiKeyFormat === 'none' ? 'Not required' : `Format: ${config.apiKeyFormat}`}\n`;
-    message += `  • Get API key from: ${config.apiKeyUrl}\n\n`;
-
-    if (setup.missingVars.length > 0) {
-      message += `❌ Missing required environment variables:\n`;
-      message += setup.missingVars.map(varName => `  • ${varName}`).join('\n');
-      message += `\n\n💡 To complete setup:\n`;
-      message += `  1. Get your API key from ${config.apiKeyUrl}\n`;
-      message += `  2. Add to your .env file:\n`;
-      message += `     ${config.requiredEnvVars.map(varName => `${varName}="your-api-key"`).join('\n     ')}\n`;
-      message += `  3. Run "/provider switch ${providerName}"\n\n`;
-      message += `📝 Or use the interactive setup: /provider setup ${providerName}`;
-    }
-
-    return {
-      type: 'message',
-      messageType: 'info',
-      content: message
-    };
   },
-  completion: async (context: CommandContext, partialArg: string): Promise<string[]> => providerManager.getAvailableProviders().filter(provider => 
+  completion: async (context: CommandContext, partialArg: string): Promise<string[]> => getProviderManager(context).getAvailableProviders().filter(provider => 
       provider.startsWith(partialArg.toLowerCase())
     ),
 };
@@ -247,18 +271,18 @@ const providerStatusCommand: SlashCommand = {
     const currentModel = config.getModel();
 
     // Find current provider
-    const currentProvider = providerManager.getCurrentProviderFromAuthType(currentAuthType || '');
-    const setup = currentProvider ? providerManager.checkProviderSetup(currentProvider) : null;
+    const currentProvider = getProviderManager(context).getCurrentProviderFromAuthType(currentAuthType || '');
+    const setup = currentProvider ? getProviderManager(context).checkProviderSetup(currentProvider) : null;
 
     let message = '📊 Current Provider Status:\n\n';
-    message += `  Provider: ${currentProvider ? providerManager.getProviderConfig(currentProvider)?.name : 'Unknown'}\n`;
+    message += `  Provider: ${currentProvider ? getProviderManager(context).getProviderConfig(currentProvider)?.name : 'Unknown'}\n`;
     message += `  Auth Type: ${currentAuthType}\n`;
     message += `  Model: ${currentModel}\n`;
     message += `  Configuration: ${setup?.configured ? '✅ Complete' : '❌ Incomplete'}\n`;
 
     if (setup?.configured) {
       message += '\n📋 Environment Variables:\n';
-      const providerConfig = providerManager.getProviderConfig(currentProvider!);
+      const providerConfig = getProviderManager(context).getProviderConfig(currentProvider!);
       if (providerConfig) {
         for (const varName of [...providerConfig.requiredEnvVars, ...providerConfig.optionalEnvVars]) {
           const value = setup.envVars[varName];
@@ -274,13 +298,13 @@ const providerStatusCommand: SlashCommand = {
       message += '\n💡 Run "/provider setup ' + currentProvider + '" to configure.';
     }
 
-    const envFilePath = providerManager.getEnvFilePath();
+    const envFilePath = getProviderManager(context).getEnvFilePath();
     if (envFilePath) {
       message += `\n\n📁 .env file: ${envFilePath}`;
     }
 
     // Add model update status
-    const updateStatus = providerManager.getModelUpdateStatus();
+    const updateStatus = getProviderManager(context).getModelUpdateStatus();
     if (Object.keys(updateStatus).length > 0) {
       message += '\n\n🔄 Model Update Status:\n';
       for (const [provider, status] of Object.entries(updateStatus)) {
@@ -351,7 +375,7 @@ const providerDiscoverCommand: SlashCommand = {
       };
     }
   },
-  completion: async (context: CommandContext, partialArg: string): Promise<string[]> => providerManager.getAvailableProviders().filter(provider => 
+  completion: async (context: CommandContext, partialArg: string): Promise<string[]> => getProviderManager(context).getAvailableProviders().filter(provider => 
       provider.startsWith(partialArg.toLowerCase())
     ),
 };

@@ -5,17 +5,32 @@
  */
 
 import type { ModelProvider, ModelProviderConfig } from './index.js';
+import type { GenerateContentResponse } from './types.js';
 
 interface OpenAICompletionRequest {
   model: string;
   messages: Array<{
-    role: 'system' | 'user' | 'assistant';
+    role: 'system' | 'user' | 'assistant' | 'function';
     content: string;
+    name?: string; // For function messages
+    function_call?: {
+      name: string;
+      arguments: string;
+    };
   }>;
   temperature?: number;
   top_p?: number;
   max_tokens?: number;
   stream?: boolean;
+  tools?: Array<{
+    type: 'function';
+    function: {
+      name: string;
+      description?: string;
+      parameters?: any;
+    };
+  }>;
+  tool_choice?: 'auto' | 'none' | { type: 'function'; function: { name: string } };
 }
 
 interface OpenAICompletionResponse {
@@ -27,7 +42,19 @@ interface OpenAICompletionResponse {
     index: number;
     message: {
       role: string;
-      content: string;
+      content: string | null;
+      tool_calls?: Array<{
+        id: string;
+        type: 'function';
+        function: {
+          name: string;
+          arguments: string;
+        };
+      }>;
+      function_call?: {
+        name: string;
+        arguments: string;
+      };
     };
     finish_reason: string;
   }>;
@@ -74,14 +101,16 @@ export class OpenAIProvider implements ModelProvider {
 
   async generateContent(request: any, userPromptId: string) {
     const messages = this.convertToOpenAIMessages(request);
+    const tools = this.convertToOpenAITools(request);
     
     const openaiRequest: OpenAICompletionRequest = {
       model: this.model,
       messages,
-      temperature: request.generationConfig?.temperature || 0,
-      top_p: request.generationConfig?.topP || 1,
-      max_tokens: request.generationConfig?.maxOutputTokens,
+      temperature: request.generationConfig?.temperature || request.config?.temperature || 0,
+      top_p: request.generationConfig?.topP || request.config?.topP || 1,
+      max_tokens: request.generationConfig?.maxOutputTokens || request.config?.maxOutputTokens,
       stream: false,
+      ...(tools.length > 0 ? { tools, tool_choice: 'auto' } : {}),
     };
 
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
@@ -104,14 +133,16 @@ export class OpenAIProvider implements ModelProvider {
 
   async generateContentStream(request: any, userPromptId: string) {
     const messages = this.convertToOpenAIMessages(request);
+    const tools = this.convertToOpenAITools(request);
     
     const openaiRequest: OpenAICompletionRequest = {
       model: this.model,
       messages,
-      temperature: request.generationConfig?.temperature || 0,
-      top_p: request.generationConfig?.topP || 1,
-      max_tokens: request.generationConfig?.maxOutputTokens,
+      temperature: request.generationConfig?.temperature || request.config?.temperature || 0,
+      top_p: request.generationConfig?.topP || request.config?.topP || 1,
+      max_tokens: request.generationConfig?.maxOutputTokens || request.config?.maxOutputTokens,
       stream: true,
+      ...(tools.length > 0 ? { tools, tool_choice: 'auto' } : {}),
     };
 
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
@@ -222,47 +253,151 @@ export class OpenAIProvider implements ModelProvider {
     return messages;
   }
 
-  private convertFromOpenAIResponse(openaiResponse: OpenAICompletionResponse): any {
+  private convertFromOpenAIResponse(openaiResponse: OpenAICompletionResponse): GenerateContentResponse {
+    const choice = openaiResponse.choices[0];
+    const text = choice?.message?.content || '';
+    const parts: any[] = [];
+    
+    // Add text content if present
+    if (text) {
+      parts.push({ text });
+    }
+    
+    // Handle tool calls (OpenAI's function calling)
+    if (choice?.message?.tool_calls) {
+      for (const toolCall of choice.message.tool_calls) {
+        if (toolCall.function) {
+          parts.push({
+            functionCall: {
+              name: toolCall.function.name,
+              args: JSON.parse(toolCall.function.arguments || '{}'),
+            },
+          });
+        }
+      }
+    }
+    
+    // Handle legacy function_call format
+    if (choice?.message?.function_call) {
+      parts.push({
+        functionCall: {
+          name: choice.message.function_call.name,
+          args: JSON.parse(choice.message.function_call.arguments || '{}'),
+        },
+      });
+    }
+    
     return {
       candidates: [
         {
           content: {
-            parts: [
-              {
-                text: openaiResponse.choices[0]?.message?.content || '',
-              },
-            ],
+            parts,
           },
-          finishReason: openaiResponse.choices[0]?.finish_reason || 'STOP',
+          finishReason: choice?.finish_reason || 'STOP',
         },
       ],
-    };
+      text,  // Add required text property
+      functionCalls: parts.filter(p => p.functionCall).map(p => p.functionCall),
+    } as GenerateContentResponse;
+  }
+
+  private convertToOpenAITools(request: any): Array<{ type: 'function'; function: any }> {
+    const tools: Array<{ type: 'function'; function: any }> = [];
+    
+    // Check for tools in config
+    if (request.config?.tools) {
+      for (const tool of request.config.tools) {
+        if (tool.functionDeclarations) {
+          for (const func of tool.functionDeclarations) {
+            tools.push({
+              type: 'function',
+              function: {
+                name: func.name,
+                description: func.description,
+                parameters: func.parameters || {},
+              },
+            });
+          }
+        }
+      }
+    }
+    
+    return tools;
   }
 
   private async *createStreamGenerator(reader: ReadableStreamDefaultReader<Uint8Array>) {
     const decoder = new TextDecoder();
+    let buffer = '';
     
     try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n').filter(line => line.trim() && line.startsWith('data: '));
+        // Append new chunk to buffer
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Process complete lines
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
         
         for (const line of lines) {
-          const data = line.slice(6); // Remove 'data: ' prefix
-          if (data === '[DONE]') break;
+          const trimmedLine = line.trim();
+          if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
+          
+          const data = trimmedLine.slice(6); // Remove 'data: ' prefix
+          if (data === '[DONE]') {
+            // Stream is complete
+            return;
+          }
           
           try {
             const openaiResponse = JSON.parse(data);
             if (openaiResponse.choices && openaiResponse.choices.length > 0) {
-              yield this.convertFromOpenAIResponse(openaiResponse);
+              const choice = openaiResponse.choices[0];
+              const content = choice?.delta?.content;
+              const toolCalls = choice?.delta?.tool_calls;
+              
+              // Handle text content
+              if (content) {
+                // For streaming responses, OpenAI sends content in 'delta' field
+                yield {
+                  candidates: [
+                    {
+                      content: {
+                        parts: [
+                          {
+                            text: content,
+                          },
+                        ],
+                      },
+                      finishReason: choice?.finish_reason || undefined,
+                    },
+                  ],
+                  text: content,  // Add required text property
+                } as GenerateContentResponse;
+              }
+              
+              // Handle tool calls in streaming
+              if (toolCalls && toolCalls.length > 0) {
+                for (const toolCall of toolCalls) {
+                  if (toolCall.function?.arguments) {
+                    // OpenAI streams function arguments incrementally
+                    // For now, we'll skip partial function calls in streaming
+                    // The full function call will come in the final non-streaming response
+                  }
+                }
+              }
             }
           } catch (e) {
-            // Skip invalid JSON lines
+            console.error('Failed to parse OpenAI stream chunk:', e);
           }
         }
+      }
+      
+      // Process any remaining data in buffer
+      if (buffer.trim()) {
+        console.warn('Incomplete data in buffer:', buffer);
       }
     } finally {
       reader.releaseLock();

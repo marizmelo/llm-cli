@@ -34,6 +34,12 @@ export interface SettingsSchema {
 export type MemoryImportFormat = 'tree' | 'flat';
 export type DnsResolutionOrder = 'ipv4first' | 'verbatim';
 
+export interface ProviderConfig {
+  name: string;
+  apiKey?: string;
+  model?: string;
+}
+
 /**
  * The canonical schema for all settings.
  * The structure of this object defines the structure of the `Settings` type.
@@ -817,6 +823,16 @@ export const SETTINGS_SCHEMA = {
         showInDialog: false,
       },
     },
+  },
+
+  providers: {
+    type: 'array',
+    label: 'AI Providers',
+    category: 'Security',
+    requiresRestart: true,
+    default: [] as ProviderConfig[],
+    description: 'Configuration for AI providers (API keys, models, etc.)',
+    showInDialog: false,
   },
 } as const;
 

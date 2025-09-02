@@ -212,6 +212,11 @@ export async function main() {
   const workspaceRoot = process.cwd();
   const settings = loadSettings(workspaceRoot);
 
+  // Sync provider API keys from settings to environment variables
+  const { ProviderManager } = await import('./config/providerManager.js');
+  const providerManager = new ProviderManager(settings);
+  providerManager.syncSettingsToEnv();
+
   await cleanupCheckpoints();
   if (settings.errors.length > 0) {
     const errorMessages = settings.errors.map(
