@@ -51,10 +51,18 @@ llm-cli
 
 #### Ollama (Local)
 ```bash
-# Install Ollama first, then:
+# 1. Install Ollama (https://ollama.com)
+# 2. Pull a model
+ollama pull llama3.2:latest
+
+# 3. Start llm-cli and switch to Ollama
 llm-cli
 /provider switch ollama
+
+# 4. (Optional) Switch to a different model
+/provider model <model-name>
 ```
+The default model is `llama3.2:latest`. Use `/provider model` to list available models and switch between them.
 
 #### Traditional Setup (Environment Variables)
 ```bash
