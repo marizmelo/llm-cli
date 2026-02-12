@@ -28,32 +28,24 @@ llm-cli --prompt "What is 2+2?"
 - 🎯 Provider-specific model switching
 - 💾 Memory and context management
 - 🔑 Secure API key management with persistent settings
-- 🛠️ Full tool/function calling support for OpenAI and Anthropic
+- 🛠️ Full tool/function calling support for OpenAI, Anthropic, and Ollama
 
-## What's New in v0.1.0
+## Provider Setup
 
-### Enhanced Provider Support
-- **OpenAI & Anthropic Tool Support**: Both providers now have full function/tool calling capabilities, allowing them to use all available CLI tools (file operations, shell commands, web searches, etc.)
-- **Persistent API Key Management**: API keys are now saved to settings and automatically synced to environment variables on startup
-- **Improved Provider Setup**: Simplified setup process with `/provider setup <provider> <api-key>` command
-- **Better Error Handling**: Fixed streaming response issues and improved error messages
-
-### Provider Setup
-
-#### Quick Setup (New Method)
+### Quick Setup
 ```bash
-# Setup providers with persistent API keys
+# Setup cloud providers with persistent API keys
 llm-cli
 /provider setup openai sk-your-api-key
 /provider setup anthropic sk-ant-your-api-key
 /provider switch openai
 ```
 
-#### Ollama (Local)
+### Ollama (Local)
 ```bash
 # 1. Install Ollama (https://ollama.com)
-# 2. Pull a model
-ollama pull llama3.2:latest
+# 2. Pull a tool-capable model
+ollama pull qwen2.5:latest
 
 # 3. Start llm-cli and switch to Ollama
 llm-cli
@@ -62,13 +54,26 @@ llm-cli
 # 4. (Optional) Switch to a different model
 /provider model <model-name>
 ```
-The default model is `llama3.2:latest`. Use `/provider model` to list available models and switch between them.
 
-#### Traditional Setup (Environment Variables)
+No `.env` file or environment variables required for Ollama. The default model is `llama3.2:latest`. Use `/provider model` to list available models and switch between them.
+
+**Tool-capable Ollama models** (recommended for file ops, shell commands, etc.):
+- `qwen2.5:7b` / `qwen2.5:14b`
+- `llama3.1:8b` / `llama3.1:70b`
+- `mistral:7b`
+
+Models without tool support (e.g. `gemma3n`, `deepseek-r1`) will automatically fall back to text-only conversation mode.
+
+### Environment Variables (Alternative)
 ```bash
-# Still supported for backward compatibility
+# Cloud providers
 export OPENAI_API_KEY="your-api-key"
 export ANTHROPIC_API_KEY="your-api-key"
+
+# Ollama (optional overrides)
+export OLLAMA_MODEL="qwen2.5:latest"
+export OLLAMA_BASE_URL="http://localhost:11434"
+
 llm-cli
 ```
 

@@ -86,7 +86,7 @@ export class OllamaProvider implements ModelProvider {
     this.model = config.model;
   }
 
-  async generateContent(request: any, userPromptId: string) {
+  async generateContent(request: any, userPromptId: string): Promise<GenerateContentResponse> {
     const messages = this.convertToOllamaMessages(request);
     const tools = this.toolsSupported ? this.convertToOllamaTools(request) : [];
 
@@ -117,7 +117,7 @@ export class OllamaProvider implements ModelProvider {
     return this.convertFromOllamaChatResponse(ollamaResponse);
   }
 
-  async generateContentStream(request: any, userPromptId: string) {
+  async generateContentStream(request: any, userPromptId: string): Promise<AsyncGenerator<GenerateContentResponse>> {
     const messages = this.convertToOllamaMessages(request);
     const tools = this.toolsSupported ? this.convertToOllamaTools(request) : [];
 
