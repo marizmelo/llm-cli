@@ -79,6 +79,7 @@ export class OllamaProvider implements ModelProvider {
   name = 'ollama';
   private baseUrl: string;
   private model: string;
+  private toolsSupported: boolean = true;
 
   constructor(config: ModelProviderConfig, gcConfig?: any) {
     this.baseUrl = config.baseUrl || 'http://localhost:11434';
@@ -87,7 +88,7 @@ export class OllamaProvider implements ModelProvider {
 
   async generateContent(request: any, userPromptId: string) {
     const messages = this.convertToOllamaMessages(request);
-    const tools = this.convertToOllamaTools(request);
+    const tools = this.toolsSupported ? this.convertToOllamaTools(request) : [];
 
     const ollamaRequest: OllamaChatRequest = {
       model: this.model,
@@ -99,25 +100,26 @@ export class OllamaProvider implements ModelProvider {
 
     const response = await fetch(`${this.baseUrl}/api/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(ollamaRequest),
     });
 
     if (!response.ok) {
       const body = await response.text().catch(() => '');
+      if (this.isToolsNotSupportedError(body) && tools.length > 0) {
+        this.toolsSupported = false;
+        return this.generateContent(request, userPromptId);
+      }
       throw new Error(`Ollama API error: ${response.status} ${response.statusText} - ${body}`);
     }
 
     const ollamaResponse: OllamaChatResponse = await response.json();
-
     return this.convertFromOllamaChatResponse(ollamaResponse);
   }
 
   async generateContentStream(request: any, userPromptId: string) {
     const messages = this.convertToOllamaMessages(request);
-    const tools = this.convertToOllamaTools(request);
+    const tools = this.toolsSupported ? this.convertToOllamaTools(request) : [];
 
     const ollamaRequest: OllamaChatRequest = {
       model: this.model,
@@ -129,14 +131,16 @@ export class OllamaProvider implements ModelProvider {
 
     const response = await fetch(`${this.baseUrl}/api/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(ollamaRequest),
     });
 
     if (!response.ok) {
       const body = await response.text().catch(() => '');
+      if (this.isToolsNotSupportedError(body) && tools.length > 0) {
+        this.toolsSupported = false;
+        return this.generateContentStream(request, userPromptId);
+      }
       throw new Error(`Ollama API error: ${response.status} ${response.statusText} - ${body}`);
     }
 
@@ -198,6 +202,20 @@ export class OllamaProvider implements ModelProvider {
 
   validateConfig(config: ModelProviderConfig): boolean {
     return config.provider === 'ollama' && !!config.model;
+  }
+
+  private isToolsNotSupportedError(body: string): boolean {
+    const lower = body.toLowerCase();
+    return lower.includes('does not support tools') || lower.includes('tool use is not supported');
+  }
+
+  private parseToolArgs(args: unknown): Record<string, unknown> {
+    if (args === null || args === undefined) return {};
+    if (typeof args === 'object' && !Array.isArray(args)) return args as Record<string, unknown>;
+    if (typeof args === 'string') {
+      try { return JSON.parse(args); } catch { return {}; }
+    }
+    return {};
   }
 
   private buildOptions(request: any): OllamaChatRequest['options'] {
@@ -315,16 +333,11 @@ export class OllamaProvider implements ModelProvider {
     // Handle tool calls
     if (message?.tool_calls) {
       for (const toolCall of message.tool_calls) {
-        if (toolCall.function) {
-          // Ollama returns arguments as a parsed object already (not a JSON string)
-          const args = typeof toolCall.function.arguments === 'string'
-            ? JSON.parse(toolCall.function.arguments)
-            : toolCall.function.arguments || {};
-
+        if (toolCall.function?.name) {
           parts.push({
             functionCall: {
               name: toolCall.function.name,
-              args,
+              args: this.parseToolArgs(toolCall.function.arguments),
             },
           });
         }
@@ -392,12 +405,12 @@ export class OllamaProvider implements ModelProvider {
             // Accumulate tool calls from chunks
             if (chunk.message?.tool_calls) {
               for (const toolCall of chunk.message.tool_calls) {
-                if (toolCall.function) {
-                  const args = typeof toolCall.function.arguments === 'string'
-                    ? JSON.parse(toolCall.function.arguments)
-                    : toolCall.function.arguments || {};
+                if (toolCall.function?.name) {
                   accumulatedToolCalls.push({
-                    function: { name: toolCall.function.name, arguments: args },
+                    function: {
+                      name: toolCall.function.name,
+                      arguments: this.parseToolArgs(toolCall.function.arguments),
+                    },
                   });
                 }
               }
