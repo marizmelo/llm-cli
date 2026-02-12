@@ -94,11 +94,7 @@ export class OllamaProvider implements ModelProvider {
       messages,
       stream: false,
       ...(tools.length > 0 ? { tools } : {}),
-      options: {
-        temperature: request.generationConfig?.temperature ?? request.config?.temperature ?? 0,
-        top_p: request.generationConfig?.topP ?? request.config?.topP ?? 1,
-        num_predict: request.generationConfig?.maxOutputTokens ?? request.config?.maxOutputTokens,
-      },
+      options: this.buildOptions(request),
     };
 
     const response = await fetch(`${this.baseUrl}/api/chat`, {
@@ -110,7 +106,8 @@ export class OllamaProvider implements ModelProvider {
     });
 
     if (!response.ok) {
-      throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+      const body = await response.text().catch(() => '');
+      throw new Error(`Ollama API error: ${response.status} ${response.statusText} - ${body}`);
     }
 
     const ollamaResponse: OllamaChatResponse = await response.json();
@@ -127,11 +124,7 @@ export class OllamaProvider implements ModelProvider {
       messages,
       stream: true,
       ...(tools.length > 0 ? { tools } : {}),
-      options: {
-        temperature: request.generationConfig?.temperature ?? request.config?.temperature ?? 0,
-        top_p: request.generationConfig?.topP ?? request.config?.topP ?? 1,
-        num_predict: request.generationConfig?.maxOutputTokens ?? request.config?.maxOutputTokens,
-      },
+      options: this.buildOptions(request),
     };
 
     const response = await fetch(`${this.baseUrl}/api/chat`, {
@@ -143,7 +136,8 @@ export class OllamaProvider implements ModelProvider {
     });
 
     if (!response.ok) {
-      throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+      const body = await response.text().catch(() => '');
+      throw new Error(`Ollama API error: ${response.status} ${response.statusText} - ${body}`);
     }
 
     const reader = response.body?.getReader();
@@ -204,6 +198,17 @@ export class OllamaProvider implements ModelProvider {
 
   validateConfig(config: ModelProviderConfig): boolean {
     return config.provider === 'ollama' && !!config.model;
+  }
+
+  private buildOptions(request: any): OllamaChatRequest['options'] {
+    const options: OllamaChatRequest['options'] = {};
+    const temp = request.generationConfig?.temperature ?? request.config?.temperature;
+    if (temp !== undefined) options!.temperature = temp;
+    const topP = request.generationConfig?.topP ?? request.config?.topP;
+    if (topP !== undefined) options!.top_p = topP;
+    const maxTokens = request.generationConfig?.maxOutputTokens ?? request.config?.maxOutputTokens;
+    if (maxTokens !== undefined) options!.num_predict = maxTokens;
+    return options;
   }
 
   private convertToOllamaMessages(request: any): OllamaChatMessage[] {
