@@ -23,6 +23,7 @@ interface OllamaChatRequest {
   model: string;
   messages: OllamaChatMessage[];
   stream?: boolean;
+  format?: 'json';
   tools?: Array<{
     type: 'function';
     function: {
@@ -89,11 +90,13 @@ export class OllamaProvider implements ModelProvider {
   async generateContent(request: any, userPromptId: string): Promise<GenerateContentResponse> {
     const messages = this.convertToOllamaMessages(request);
     const tools = this.toolsSupported ? this.convertToOllamaTools(request) : [];
+    const wantsJson = request.config?.responseMimeType === 'application/json';
 
     const ollamaRequest: OllamaChatRequest = {
       model: this.model,
       messages,
       stream: false,
+      ...(wantsJson ? { format: 'json' } : {}),
       ...(tools.length > 0 ? { tools } : {}),
       options: this.buildOptions(request),
     };
@@ -120,11 +123,13 @@ export class OllamaProvider implements ModelProvider {
   async generateContentStream(request: any, userPromptId: string): Promise<AsyncGenerator<GenerateContentResponse>> {
     const messages = this.convertToOllamaMessages(request);
     const tools = this.toolsSupported ? this.convertToOllamaTools(request) : [];
+    const wantsJson = request.config?.responseMimeType === 'application/json';
 
     const ollamaRequest: OllamaChatRequest = {
       model: this.model,
       messages,
       stream: true,
+      ...(wantsJson ? { format: 'json' } : {}),
       ...(tools.length > 0 ? { tools } : {}),
       options: this.buildOptions(request),
     };
